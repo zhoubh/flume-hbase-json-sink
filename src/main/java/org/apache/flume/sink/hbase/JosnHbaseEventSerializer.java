@@ -38,9 +38,6 @@ import com.google.common.collect.Lists;
 
 public class JosnHbaseEventSerializer implements HbaseEventSerializer {
 
-	private static final String DEPOSIT_HEADERS_CONFIG = "depositHeaders";
-	private static final boolean DEPOSIT_HEADERS_DEFAULT = false;
-
 	private static final String CHARSET_CONFIG = "charset";
 	private static final String CHARSET_DEFAULT = "UTF-8";
 
@@ -49,12 +46,10 @@ public class JosnHbaseEventSerializer implements HbaseEventSerializer {
 	protected byte[] cf;
 	private byte[] payload;
 	private Map<String, String> headers;
-	private boolean depositHeaders;
 	private Charset charset;
 
 	@Override
 	public void configure(Context context) {
-		depositHeaders = context.getBoolean(DEPOSIT_HEADERS_CONFIG, DEPOSIT_HEADERS_DEFAULT);
 		charset = Charset.forName(context.getString(CHARSET_CONFIG, CHARSET_DEFAULT));
 	}
 
@@ -88,14 +83,15 @@ public class JosnHbaseEventSerializer implements HbaseEventSerializer {
 			Put put = new Put(rowKey);
 			
 			Map<String,Object> maps = new ObjectMapper().readValue(new String(payload), Map.class);
-	        for (Entry<String, Object>entry:maps.entrySet()) {
-	        	put.add(cf, entry.getKey().getBytes(charset), entry.getValue().toString().getBytes(charset));
-			}
 			
-			if (depositHeaders) {
-				for (Map.Entry<String, String> entry : headers.entrySet()) {
-					put.add(cf, entry.getKey().getBytes(charset), entry.getValue().getBytes(charset));
-				}
+			maps.remove("headers");
+			
+			for (Entry<String, Object>entry:maps.entrySet()) {
+				put.add(cf, entry.getKey().getBytes(charset), entry.getValue().toString().getBytes(charset));
+	        }
+	   
+	        for (Map.Entry<String, String> entry : headers.entrySet()) {
+				put.add(cf, entry.getKey().getBytes(charset), entry.getValue().getBytes(charset));
 			}
 			
 			actions.add(put);

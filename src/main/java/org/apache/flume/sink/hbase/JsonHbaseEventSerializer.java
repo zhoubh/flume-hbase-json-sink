@@ -36,7 +36,7 @@ import org.apache.hadoop.hbase.client.Row;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
 
-public class JosnHbaseEventSerializer implements HbaseEventSerializer {
+public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 
 	private static final String CHARSET_CONFIG = "charset";
 	private static final String CHARSET_DEFAULT = "UTF-8";

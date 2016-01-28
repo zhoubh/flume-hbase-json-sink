@@ -103,7 +103,7 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 	
 			for (Entry<String, JsonElement> entry : sets) {
 				String xcontent=entry.getValue().toString();
-				if (xcontent.length()>2) {
+				if (xcontent.startsWith("\"")&&xcontent.length()>2) {
 					xcontent=xcontent.substring(1,xcontent.length()-1);
 				}
 				put.addColumn(cf, entry.getKey().getBytes(charset), xcontent.getBytes(charset));

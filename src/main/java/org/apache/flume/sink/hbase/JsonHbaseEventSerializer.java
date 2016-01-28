@@ -91,20 +91,10 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 				return actions;
 			}
 			
-			
 			JsonObject jsonObject=null;
 			
 			if(element.isJsonObject()){
-				
 				jsonObject=element.getAsJsonObject();
-				
-				Set<Entry<String, JsonElement>> sets = jsonObject.entrySet();
-		
-				sets.remove("headers");
-				
-				for (Entry<String, JsonElement> entry : sets) {
-					put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().getAsString().getBytes(charset));
-				}
 			}
 			
 			if(element.isJsonArray()){
@@ -115,7 +105,7 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 					
 					StringBuffer sbf=new StringBuffer();
 					for (int i = 1; i < element.getAsJsonArray().size(); i++) {
-						sbf.append(element.getAsJsonArray().get(i).getAsString());
+						sbf.append(element.getAsJsonArray().get(i).toString());
 					}
 					
 					put.addColumn(cf,"extends".getBytes(charset),sbf.toString().getBytes(charset));
@@ -125,8 +115,9 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 			Set<Entry<String, JsonElement>> sets = jsonObject.entrySet();
 
 			sets.remove("headers");
+	
 			for (Entry<String, JsonElement> entry : sets) {
-				put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().getAsString().getBytes(charset));
+				put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().toString().getBytes(charset));
 			}
 			
 	        for (Map.Entry<String, String> entry : headers.entrySet()) {

@@ -20,7 +20,6 @@ package org.apache.flume.sink.hbase;
 
 import java.nio.charset.Charset;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -92,27 +91,34 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 				return actions;
 			}
 			
-			JsonObject jsonObject = null;
 			
 			if(element.isJsonObject()){
-				jsonObject=element.getAsJsonObject();
+				
+				JsonObject jsonObject=element.getAsJsonObject();
+				
+				Set<Entry<String, JsonElement>> sets = jsonObject.entrySet();
+		
+				sets.remove("headers");
+				
+				for (Entry<String, JsonElement> entry : sets) {
+					put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().getAsString().getBytes(charset));
+				}
 			}
 			
 			if(element.isJsonArray()){
-				jsonObject=element.getAsJsonArray().get(0).getAsJsonObject();
+				
+				for (JsonElement jsonElement : element.getAsJsonArray()) {
+					
+					Set<Entry<String, JsonElement>> sets = jsonElement.getAsJsonObject().entrySet();
+			
+					sets.remove("headers");
+					
+					for (Entry<String, JsonElement> entry : sets) {
+						put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().getAsString().getBytes(charset));
+					}
+				}
 			}
 			
-			Set<Entry<String, JsonElement>> sets = jsonObject.entrySet();
-			
-			sets.remove("headers");
-			
-			for (Iterator<Entry<String, JsonElement>> iterator = sets.iterator(); iterator.hasNext();) {
-	            
-				Entry<String, JsonElement> entry = iterator.next();
-	            
-				put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().toString().getBytes(charset));
-	        }
-	   
 	        for (Map.Entry<String, String> entry : headers.entrySet()) {
 				put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().getBytes(charset));
 			}

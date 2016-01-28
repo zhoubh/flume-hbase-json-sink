@@ -20,9 +20,11 @@ package org.apache.flume.sink.hbase;
 
 import java.nio.charset.Charset;
 import java.util.Calendar;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.flume.Context;
@@ -33,8 +35,10 @@ import org.apache.hadoop.hbase.client.Increment;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Row;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Lists;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 
@@ -82,21 +86,40 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 			
 			Put put = new Put(rowKey);
 			
-			Map<String,Object> maps = new ObjectMapper().readValue(new String(payload), Map.class);
+			JsonElement element=new JsonParser().parse(new String(payload));
 			
-			maps.remove("headers");
+			if (element.isJsonNull()) {
+				return actions;
+			}
 			
-			for (Entry<String, Object>entry:maps.entrySet()) {
-				put.add(cf, entry.getKey().getBytes(charset), entry.getValue().toString().getBytes(charset));
+			JsonObject jsonObject = null;
+			
+			if(element.isJsonObject()){
+				jsonObject=element.getAsJsonObject();
+			}
+			
+			if(element.isJsonArray()){
+				jsonObject=element.getAsJsonArray().get(0).getAsJsonObject();
+			}
+			
+			Set<Entry<String, JsonElement>> sets = jsonObject.entrySet();
+			
+			sets.remove("headers");
+			
+			for (Iterator<Entry<String, JsonElement>> iterator = sets.iterator(); iterator.hasNext();) {
+	            
+				Entry<String, JsonElement> entry = iterator.next();
+	            
+				put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().toString().getBytes(charset));
 	        }
 	   
 	        for (Map.Entry<String, String> entry : headers.entrySet()) {
-				put.add(cf, entry.getKey().getBytes(charset), entry.getValue().getBytes(charset));
+				put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().getBytes(charset));
 			}
 			
 			actions.add(put);
 		} catch (Exception e) {
-			throw new FlumeException("Could not get row key!", e);
+			throw new FlumeException(e.getMessage(), e);
 		}
 		return actions;
 	}

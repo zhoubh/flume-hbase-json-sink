@@ -109,21 +109,25 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
             JsonObject jsonObject = element.getAsJsonObject();
 
             Set<Entry<String, JsonElement>> sets = jsonObject.entrySet();
-            sets.remove("headers");
-
+            sets.remove(headers);
+// add start by zhoubh. rowkey : lastnumber+send_number + others
             for (Entry<String, JsonElement> entry : sets) {
                 String xcontent = entry.getValue().toString();
                 if (xcontent.startsWith("\"") && xcontent.endsWith("\"")) {
                     xcontent = xcontent.substring(1, xcontent.length() - 1);
                 }
-                // add by zhoubh
                 if (entry.getKey().equals("send_number")) {
                     String rowKey_1 = xcontent.substring(xcontent.length() - 1, xcontent.length()) + xcontent;
                     byte[] rowKey2 = getRowKey_2(rowKey_1);
                     put = new Put(rowKey2);
                 }
-                // add by zhoubh
-
+            }
+// add end by zhoubh
+            for (Entry<String, JsonElement> entry : sets) {
+                String xcontent = entry.getValue().toString();
+                if (xcontent.startsWith("\"") && xcontent.endsWith("\"")) {
+                    xcontent = xcontent.substring(1, xcontent.length() - 1);
+                }
                 put.addColumn(cf, entry.getKey().getBytes(charset), xcontent.getBytes(charset));
 
             }

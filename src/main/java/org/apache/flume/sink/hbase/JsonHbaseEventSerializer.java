@@ -117,7 +117,7 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
                     xcontent = xcontent.substring(1, xcontent.length() - 1);
                 }
                 if (entry.getKey().equals("send_number")) {
-                    String rowKey_1 = xcontent.substring(xcontent.length() - 1, xcontent.length()) + xcontent;
+                    String rowKey_1 = xcontent.substring(xcontent.length() - 1, xcontent.length()) +"-"+ xcontent;
                     byte[] rowKey2 = getRowKey_2(rowKey_1);
                     put = new Put(rowKey2);
                 }

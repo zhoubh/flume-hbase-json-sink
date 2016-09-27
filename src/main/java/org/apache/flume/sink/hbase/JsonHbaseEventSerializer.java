@@ -50,8 +50,6 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
     private byte[] payload;
     private Map<String, String> headers;
     private Charset charset;
-    //add by zhoubh. put zhe send_number into RowKey.
-    private String send_number;
 
     @Override
     public void configure(Context context) {
@@ -70,7 +68,7 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
     }
 
     protected byte[] getRowKey_2(Calendar cal, String s) {
-        String rowKey = String.format("%s-%s-%s", s, cal.getTimeInMillis(), nonce.getAndIncrement());
+        String rowKey = String.format("%s%s%s", s, cal.getTimeInMillis(), nonce.getAndIncrement());
         return rowKey.getBytes(charset);
     }
 
@@ -78,8 +76,16 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
         return getRowKey_2(Calendar.getInstance(), s);
     }
 
+    protected byte[] getRowKey_3(String s) {
+        return s.getBytes(charset);
+    }
+
     protected byte[] getRowKey(Calendar cal) {
-        String rowKey = String.format("%s-%s", cal.getTimeInMillis(), nonce.getAndIncrement());
+        Long lt = cal.getTimeInMillis();
+        String st = lt.toString();
+        //String st1 = st.substring(st.length() - 1, st.length());
+        String st1 =new StringBuffer(st).reverse().toString()  ;
+        String rowKey = String.format("%s%s", st1, nonce.getAndIncrement());
         return rowKey.getBytes(charset);
     }
 
@@ -111,15 +117,25 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
             Set<Entry<String, JsonElement>> sets = jsonObject.entrySet();
             sets.remove(headers);
 // add start by zhoubh. rowkey : lastnumber+send_number + others
+            // rowkey 规则调整 改为  mt_msgid , 如果msgid为空的话采用随机生成的办法
             for (Entry<String, JsonElement> entry : sets) {
                 String xcontent = entry.getValue().toString();
                 if (xcontent.startsWith("\"") && xcontent.endsWith("\"")) {
                     xcontent = xcontent.substring(1, xcontent.length() - 1);
                 }
-                if (entry.getKey().equals("send_number")) {
-                    String rowKey_1 = xcontent.substring(xcontent.length() - 1, xcontent.length()) +"-"+ xcontent;
-                    byte[] rowKey2 = getRowKey_2(rowKey_1);
-                    put = new Put(rowKey2);
+
+/***
+ if (entry.getKey().equals("send_number")) {
+ String rowKey_1 = xcontent.substring(xcontent.length() - 1, xcontent.length()) + xcontent;
+ byte[] rowKey2 = getRowKey_2(rowKey_1);
+ put = new Put(rowKey2);
+ }
+ */
+
+
+                if (entry.getKey().equals("mt_msgid") && xcontent.length() > 0) {
+                    byte[] rowKey3 = getRowKey_3(xcontent);
+                    put = new Put(rowKey3);
                 }
             }
 // add end by zhoubh
@@ -132,10 +148,9 @@ public class JsonHbaseEventSerializer implements HbaseEventSerializer {
 
             }
 
-
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().getBytes(charset));
-            }
+//            for (Map.Entry<String, String> entry : headers.entrySet()) {
+//                put.addColumn(cf, entry.getKey().getBytes(charset), entry.getValue().getBytes(charset));
+//            }
 
             actions.add(put);
         } catch (Exception e) {

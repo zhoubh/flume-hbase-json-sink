@@ -29,6 +29,7 @@ public class Json360HbaseEventSerializer implements HbaseEventSerializer {
 
     protected static final AtomicLong nonce = new AtomicLong(0);
 
+
     protected byte[] cf;
     private byte[] payload;
     private Map<String, String> headers;
